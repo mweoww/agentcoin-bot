@@ -1,26 +1,20 @@
-# 敏感数据
+# Environment variables
 .env
+.env.local
+.env.*
 
-# 用户数据
-data/accounts.txt
-data/registered.txt
-data/.state.json
-data/batch_state.json
-data/mine_status.json
-data/mine_stats.json
-data/register_log.jsonl
+# Runtime data
+data/
+*.state.json
+*.log
 
 # Python
 __pycache__/
-*.pyc
-*.pyo
-.venv/
+*.py[cod]
+*$py.class
 venv/
-*.egg-info/
+env/
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-.DS_Store
