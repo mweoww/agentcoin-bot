@@ -1,6 +1,6 @@
 """
 AgentCoin 全自动挖矿机器人 - 配置管理
-从 .env 文件加载所有配置，提供全局代理工厂方法
+优先从环境变量读取，fallback ke file .env
 """
 
 import os
@@ -8,43 +8,42 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# 加载 .env
+# Load .env sebagai fallback (untuk development lokal)
 ENV_PATH = Path(__file__).parent / ".env"
-load_dotenv(ENV_PATH)
+if ENV_PATH.exists():
+    load_dotenv(ENV_PATH)
 
-# ─── 钱包 ───
-PRIVATE_KEY = os.getenv("PRIVATE_KEY", "").strip()
+# ─── SEMUA VARIABLE DIBACA DARI ENVIRONMENT (Railway Priority) ───
+# Wallet
+PRIVATE_KEY = os.environ.get("PRIVATE_KEY", "").strip()
 
-# ─── X (Twitter) API 主通道 ───
-X_HANDLE = os.getenv("X_HANDLE", "").strip()
-X_API_KEY = os.getenv("X_API_KEY", "").strip()
-X_API_SECRET = os.getenv("X_API_SECRET", "").strip()
-X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN", "").strip()
-X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET", "").strip()
+# X (Twitter)
+X_HANDLE = os.environ.get("X_HANDLE", "").strip()
+X_API_KEY = os.environ.get("X_API_KEY", "").strip()
+X_API_SECRET = os.environ.get("X_API_SECRET", "").strip()
+X_ACCESS_TOKEN = os.environ.get("X_ACCESS_TOKEN", "").strip()
+X_ACCESS_SECRET = os.environ.get("X_ACCESS_SECRET", "").strip()
+X_AUTH_TOKEN = os.environ.get("X_AUTH_TOKEN", "").strip()
+X_CT0 = os.environ.get("X_CT0", "").strip()
 
-# ─── X Cookie 备用通道 ───
-X_AUTH_TOKEN = os.getenv("X_AUTH_TOKEN", "").strip()
-X_CT0 = os.getenv("X_CT0", "").strip()
+# Proxy
+PROXY_HOST = os.environ.get("PROXY_HOST", "").strip()
+PROXY_AUTH = os.environ.get("PROXY_AUTH", "").strip()
 
-# ─── 全局代理 ───
-PROXY_HOST = os.getenv("PROXY_HOST", "").strip()
-PROXY_AUTH = os.getenv("PROXY_AUTH", "").strip()
+# AI (Claude)
+ANTHROPIC_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL", "").strip()
+# BISA TERIMA DUA NAMA: ANTHROPIC_AUTH_TOKEN atau ANTHROPIC_KEY
+ANTHROPIC_AUTH_TOKEN = os.environ.get("ANTHROPIC_AUTH_TOKEN") or os.environ.get("ANTHROPIC_KEY") or ""
 
-# ─── AI (Claude 4.6) ───
-ANTHROPIC_BASE_URL = os.getenv("ANTHROPIC_BASE_URL", "").strip()
-ANTHROPIC_AUTH_TOKEN = os.getenv("ANTHROPIC_AUTH_TOKEN", "").strip()
+# Chain
+BASE_RPC_URL = os.environ.get("BASE_RPC_URL", "https://mainnet.base.org").strip()
 
-# ─── 链 ───
-BASE_RPC_URL = os.getenv("BASE_RPC_URL", "https://mainnet.base.org").strip()
+# Runtime
+POLL_INTERVAL = int(os.environ.get("POLL_INTERVAL", "30"))
+AUTO_CLAIM = os.environ.get("AUTO_CLAIM", "true").lower() == "true"
 
-# ─── 运行参数 ───
-POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "30"))
-AUTO_CLAIM = os.getenv("AUTO_CLAIM", "true").lower() == "true"
-
-# ─── AgentCoin API ───
+# ─── Sisanya tetap sama ───
 AGC_API_BASE = "https://api.agentcoin.site"
-
-# ─── 状态文件路径 ───
 STATE_FILE = Path(__file__).parent / "data" / ".state.json"
 
 
