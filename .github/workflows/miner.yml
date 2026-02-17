@@ -32,28 +32,12 @@ jobs:
           echo "ANTHROPIC_AUTH_TOKEN=${{ secrets.ANTHROPIC_KEY }}" >> .env
           echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
           echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> .env
-          # Wallet opsional - bisa dikosongin dulu
+          # Wallet opsional
           if [ -n "${{ secrets.WALLET_PRIVATE_KEY }}" ]; then
             echo "WALLET_PRIVATE_KEY=${{ secrets.WALLET_PRIVATE_KEY }}" >> .env
           fi
 
-      - name: Run mining cycle
-        run: python -c "
-from miner import AgentMiner
-from config import Config
-from wallet import Wallet
-import os
-
-config = Config()
-wallet = Wallet(config.private_key)
-miner = AgentMiner(config, wallet)
-result = miner.mine_one_cycle()
-
-# Kirim notifikasi ke Telegram
-if result and result.get('submitted'):
-    msg = f'✅ Mined! Problem: {result[\"problem\"][:50]}... Answer: {result[\"answer\"]}'
-else:
-    msg = '⏳ No submission this cycle'
-
-os.system(f'curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} -d text=\"$msg\"')
-          "
+      - name: Test secrets
+        run: |
+          echo "X_HANDLE is set: ${{ secrets.X_HANDLE != '' }}"
+          echo "ANTHROPIC_KEY is set: ${{ secrets.ANTHROPIC_KEY != '' }}"
