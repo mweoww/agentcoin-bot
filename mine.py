@@ -666,8 +666,8 @@ def _auto_register_onchain(w3, account, x_handle: str, dash: BatchMineDashboard)
         dash.update_account(addr, "Gas不足")
         return 0
 
-    if eth_bal < 0.0001:
-        dash.log("警告", f"{addr[:10]}... ETH 余额极低 ({eth_bal:.6f})，可能不够 gas")
+    if eth_bal < 0.00001:
+        dash.log("警告", f"{addr[:10]}... ETH 余额极低 ({eth_bal:.8f})，可能不够 gas")
 
     # 计算 xAccountHash
     x_normalized = x_handle.lower().strip()

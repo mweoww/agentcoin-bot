@@ -158,10 +158,12 @@ def _load_registered_full():
     return accounts
 
 
+GAS_THRESHOLD = 0.00001  # Gas 不足阈值 (ETH)
+
 def _get_gas_insufficient_wallets() -> set:
     """获取 Gas 不足的钱包地址集合（从缓存读取）"""
     if _gas_cache is not None:
-        return {w for w, bal in _gas_cache.items() if bal < 0.0001}
+        return {w for w, bal in _gas_cache.items() if bal < GAS_THRESHOLD}
     return set()
 
 
@@ -487,6 +489,16 @@ HTML_TEMPLATE = r"""
   <!-- ═══ 控制中心 ═══ -->
   <div id="page-control" class="page">
     <div class="container">
+      <div class="panel" style="margin-top:0">
+        <div class="panel-header">系统日志</div>
+        <div class="panel-body" id="ctrl-logs" style="max-height:500px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 注册页面 ═══ -->
+  <div id="page-register" class="page active">
+    <div class="container">
       <!-- 批量注册控制 -->
       <div class="ctrl-section">
         <h3>批量注册</h3>
@@ -512,42 +524,6 @@ HTML_TEMPLATE = r"""
         </div>
       </div>
 
-      <!-- 批量挖矿控制 -->
-      <div class="ctrl-section">
-        <h3>批量挖矿</h3>
-        <div class="ctrl-row">
-          <div class="ctrl-field">
-            <label>起始序号</label>
-            <input type="number" id="mine-start" value="0" min="0">
-          </div>
-          <div class="ctrl-field">
-            <label>账号数量</label>
-            <input type="number" id="mine-count" value="100" min="1">
-          </div>
-          <div class="ctrl-field">
-            <label>并发数</label>
-            <input type="number" id="mine-workers" value="5" min="1" max="20">
-          </div>
-          <button class="btn btn-start" id="btn-mine-start" onclick="startMine()">启动挖矿</button>
-          <button class="btn btn-stop" id="btn-mine-stop" onclick="stopMine()" disabled>停止挖矿</button>
-        </div>
-        <div class="proc-status">
-          <div class="proc-dot off" id="mine-dot"></div>
-          <span id="mine-status-text" style="font-size:13px;color:#7a8ba3">未运行</span>
-        </div>
-      </div>
-
-      <!-- 系统日志 -->
-      <div class="panel" style="margin-top:0">
-        <div class="panel-header">系统日志</div>
-        <div class="panel-body" id="ctrl-logs" style="max-height:300px"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ 注册页面 ═══ -->
-  <div id="page-register" class="page active">
-    <div class="container">
       <div class="cards">
         <div class="card c-blue"><div class="label">账号总数</div><div class="value" id="r-total">-</div></div>
         <div class="card c-green"><div class="label">已注册</div><div class="value" id="r-registered">-</div></div>
@@ -558,43 +534,6 @@ HTML_TEMPLATE = r"""
         <div class="title">注册进度</div>
         <div class="progress-bar"><div class="fill fill-reg" id="r-fill" style="width:0%"></div></div>
         <div class="progress-text" id="r-progress-text">0 / 0</div>
-      </div>
-      <!-- Gas 余额查询 -->
-      <div class="export-section" id="gas-section">
-        <h3>&#9889; Gas 余额查询</h3>
-        <div class="export-row" style="align-items:center">
-          <button class="btn" id="btn-query-gas" style="background:linear-gradient(135deg,#ffa726,#ff7043);color:#fff;font-size:15px;padding:12px 28px" onclick="queryGas()">一键查询 Gas</button>
-          <span id="gas-status-text" style="font-size:13px;color:#7a8ba3">点击按钮查询所有账号链上 ETH 余额</span>
-        </div>
-        <div id="gas-summary" style="display:none;margin-top:14px">
-          <div style="display:flex;gap:20px;flex-wrap:wrap">
-            <div style="background:#0a0e17;border:1px solid #1e2a3a;border-radius:10px;padding:14px 22px;text-align:center;min-width:130px">
-              <div style="font-size:11px;color:#7a8ba3;text-transform:uppercase;letter-spacing:1px">已注册</div>
-              <div id="gas-total" style="font-size:28px;font-weight:700;color:#00d4ff;margin-top:4px">-</div>
-            </div>
-            <div style="background:#0a0e17;border:1px solid #1e2a3a;border-radius:10px;padding:14px 22px;text-align:center;min-width:130px">
-              <div style="font-size:11px;color:#7a8ba3;text-transform:uppercase;letter-spacing:1px">Gas 不足</div>
-              <div id="gas-bad" style="font-size:28px;font-weight:700;color:#ef5350;margin-top:4px">-</div>
-            </div>
-            <div style="background:#0a0e17;border:1px solid #1e2a3a;border-radius:10px;padding:14px 22px;text-align:center;min-width:130px">
-              <div style="font-size:11px;color:#7a8ba3;text-transform:uppercase;letter-spacing:1px">Gas 正常</div>
-              <div id="gas-good" style="font-size:28px;font-weight:700;color:#00e676;margin-top:4px">-</div>
-            </div>
-            <div style="background:#0a0e17;border:1px solid #1e2a3a;border-radius:10px;padding:14px 22px;text-align:center;min-width:130px">
-              <div style="font-size:11px;color:#7a8ba3;text-transform:uppercase;letter-spacing:1px">查询耗时</div>
-              <div id="gas-time" style="font-size:28px;font-weight:700;color:#ffa726;margin-top:4px">-</div>
-            </div>
-          </div>
-        </div>
-        <div id="gas-detail-wrap" style="display:none;margin-top:14px">
-          <div style="font-size:13px;color:#7a8ba3;margin-bottom:8px">余额明细（Gas不足排在前面）</div>
-          <div style="max-height:300px;overflow-y:auto;background:#0a0e17;border:1px solid #1e2a3a;border-radius:8px">
-            <table>
-              <thead><tr><th>#</th><th>钱包地址</th><th>ETH 余额</th><th>状态</th></tr></thead>
-              <tbody id="gas-detail-body"></tbody>
-            </table>
-          </div>
-        </div>
       </div>
 
       <!-- 数据导出 -->
@@ -633,6 +572,31 @@ HTML_TEMPLATE = r"""
   <!-- ═══ 挖矿页面 ═══ -->
   <div id="page-mining" class="page">
     <div class="container">
+      <!-- 批量挖矿控制 -->
+      <div class="ctrl-section">
+        <h3>批量挖矿</h3>
+        <div class="ctrl-row">
+          <div class="ctrl-field">
+            <label>起始序号</label>
+            <input type="number" id="mine-start" value="0" min="0">
+          </div>
+          <div class="ctrl-field">
+            <label>账号数量</label>
+            <input type="number" id="mine-count" value="100" min="1">
+          </div>
+          <div class="ctrl-field">
+            <label>并发数</label>
+            <input type="number" id="mine-workers" value="5" min="1" max="20">
+          </div>
+          <button class="btn btn-start" id="btn-mine-start" onclick="startMine()">启动挖矿</button>
+          <button class="btn btn-stop" id="btn-mine-stop" onclick="stopMine()" disabled>停止挖矿</button>
+        </div>
+        <div class="proc-status">
+          <div class="proc-dot off" id="mine-dot"></div>
+          <span id="mine-status-text" style="font-size:13px;color:#7a8ba3">未运行</span>
+        </div>
+      </div>
+
       <div class="cards">
         <div class="card c-green"><div class="label">活跃矿工</div><div class="value" id="m-active">-</div><div class="sub" id="m-badge"></div></div>
         <div class="card c-blue"><div class="label">已解题</div><div class="value" id="m-solved">-</div></div>
@@ -644,6 +608,46 @@ HTML_TEMPLATE = r"""
         <div class="card c-orange"><div class="label">运行时间</div><div class="value" id="m-elapsed" style="font-size:24px">-</div></div>
         <div class="card c-blue"><div class="label">最后更新</div><div class="value" id="m-updated" style="font-size:16px;color:#7a8ba3">-</div></div>
       </div>
+
+      <!-- Gas 余额查询 -->
+      <div class="export-section" id="gas-section">
+        <h3>&#9889; Gas 余额查询</h3>
+        <div class="export-row" style="align-items:center">
+          <button class="btn" id="btn-query-gas" style="background:linear-gradient(135deg,#ffa726,#ff7043);color:#fff;font-size:15px;padding:12px 28px" onclick="queryGas()">一键查询 Gas</button>
+          <button class="btn" id="btn-export-gas-bad" style="background:linear-gradient(135deg,#ef5350,#f06292);color:#fff;display:none" onclick="exportGasBadAddresses()">导出 Gas 不足地址</button>
+          <span id="gas-status-text" style="font-size:13px;color:#7a8ba3">点击按钮查询所有账号链上 ETH 余额</span>
+        </div>
+        <div id="gas-summary" style="display:none;margin-top:14px">
+          <div style="display:flex;gap:20px;flex-wrap:wrap">
+            <div style="background:#0a0e17;border:1px solid #1e2a3a;border-radius:10px;padding:14px 22px;text-align:center;min-width:130px">
+              <div style="font-size:11px;color:#7a8ba3;text-transform:uppercase;letter-spacing:1px">已注册</div>
+              <div id="gas-total" style="font-size:28px;font-weight:700;color:#00d4ff;margin-top:4px">-</div>
+            </div>
+            <div style="background:#0a0e17;border:1px solid #1e2a3a;border-radius:10px;padding:14px 22px;text-align:center;min-width:130px">
+              <div style="font-size:11px;color:#7a8ba3;text-transform:uppercase;letter-spacing:1px">Gas 不足</div>
+              <div id="gas-bad" style="font-size:28px;font-weight:700;color:#ef5350;margin-top:4px">-</div>
+            </div>
+            <div style="background:#0a0e17;border:1px solid #1e2a3a;border-radius:10px;padding:14px 22px;text-align:center;min-width:130px">
+              <div style="font-size:11px;color:#7a8ba3;text-transform:uppercase;letter-spacing:1px">Gas 正常</div>
+              <div id="gas-good" style="font-size:28px;font-weight:700;color:#00e676;margin-top:4px">-</div>
+            </div>
+            <div style="background:#0a0e17;border:1px solid #1e2a3a;border-radius:10px;padding:14px 22px;text-align:center;min-width:130px">
+              <div style="font-size:11px;color:#7a8ba3;text-transform:uppercase;letter-spacing:1px">查询耗时</div>
+              <div id="gas-time" style="font-size:28px;font-weight:700;color:#ffa726;margin-top:4px">-</div>
+            </div>
+          </div>
+        </div>
+        <div id="gas-detail-wrap" style="display:none;margin-top:14px">
+          <div style="font-size:13px;color:#7a8ba3;margin-bottom:8px">余额明细（Gas不足排在前面）</div>
+          <div style="max-height:300px;overflow-y:auto;background:#0a0e17;border:1px solid #1e2a3a;border-radius:8px">
+            <table>
+              <thead><tr><th>#</th><th>钱包地址</th><th>ETH 余额</th><th>状态</th></tr></thead>
+              <tbody id="gas-detail-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div class="panels">
         <div class="panel"><div class="panel-header">矿工列表</div><div class="panel-body"><table><thead><tr><th>钱包</th><th>状态</th><th>解题</th><th>提交</th><th>收益</th></tr></thead><tbody id="m-miners"></tbody></table></div></div>
         <div class="panel"><div class="panel-header">挖矿日志</div><div class="panel-body" id="m-logs"></div></div>
@@ -830,6 +834,9 @@ function queryGas() {
       document.getElementById('gas-bad').textContent = d.gas_insufficient;
       document.getElementById('gas-good').textContent = d.gas_ok;
       document.getElementById('gas-time').textContent = d.query_time + 's';
+      if (d.gas_insufficient > 0) {
+        document.getElementById('btn-export-gas-bad').style.display = 'inline-flex';
+      }
       showToast(d.message);
       fetchExportStats();
       updateExportPreview();
@@ -845,6 +852,22 @@ function queryGas() {
     statusText.textContent = '请求失败，请检查网络';
     statusText.style.color = '#ef5350';
     showToast('请求失败');
+  });
+}
+
+function exportGasBadAddresses() {
+  fetch('/api/mine/gas_bad_addresses').then(r => r.json()).then(d => {
+    if (!d.addresses || d.addresses.length === 0) { showToast('没有 Gas 不足的地址'); return; }
+    const text = d.addresses.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('已复制 ' + d.addresses.length + ' 个 Gas 不足地址到剪贴板');
+    }).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('已复制 ' + d.addresses.length + ' 个 Gas 不足地址到剪贴板');
+    });
   });
 }
 
@@ -887,6 +910,9 @@ function initGasPanel() {
       document.getElementById('gas-time').textContent = d.query_time + 's';
       document.getElementById('gas-status-text').textContent = '上次查询结果（点击按钮刷新）';
       document.getElementById('gas-status-text').style.color = '#7a8ba3';
+      if (d.gas_insufficient > 0) {
+        document.getElementById('btn-export-gas-bad').style.display = 'inline-flex';
+      }
       loadGasDetail();
     }
   });
@@ -1006,7 +1032,7 @@ def api_export_refresh():
     balances = _query_all_balances()
     all_accounts = _load_registered_full()
     total = len(all_accounts)
-    insufficient = len([w for w, b in balances.items() if b < 0.0001])
+    insufficient = len([w for w, b in balances.items() if b < GAS_THRESHOLD])
     return jsonify({
         "ok": True,
         "total": total,
@@ -1031,12 +1057,35 @@ def api_gas_detail():
         result.append({
             "wallet": w,
             "eth": round(bal, 8) if bal >= 0 else None,
-            "status": "insufficient" if 0 <= bal < 0.0001 else ("ok" if bal >= 0.0001 else "unknown"),
+            "status": "insufficient" if 0 <= bal < GAS_THRESHOLD else ("ok" if bal >= GAS_THRESHOLD else "unknown"),
         })
 
     # 按余额排序：不足的在前
     result.sort(key=lambda x: (0 if x["status"] == "insufficient" else 1, x["eth"] or 0))
     return jsonify({"queried": True, "accounts": result, "query_time": _gas_query_elapsed})
+
+
+@app.route("/api/mine/gas_bad_addresses")
+def api_mine_gas_bad_addresses():
+    """返回 Gas 不足的钱包地址列表（从 Gas 缓存 + 挖矿状态双重判断）"""
+    addresses = set()
+
+    # 从 Gas 缓存中获取余额不足的
+    if _gas_cache is not None:
+        for w, bal in _gas_cache.items():
+            if bal < 0.00001:
+                addresses.add(w)
+
+    # 从挖矿状态中获取标记为 Gas 不足的
+    try:
+        mine_status = _get_mine_status()
+        for m in mine_status.get("miners", []):
+            if "Gas" in m.get("status", "") and "不足" in m.get("status", ""):
+                addresses.add(m["wallet"])
+    except Exception:
+        pass
+
+    return jsonify({"addresses": sorted(addresses), "count": len(addresses)})
 
 
 # ═══════════════════════════════════════════

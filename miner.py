@@ -428,7 +428,7 @@ class Miner:
             tx_func = self.contracts["problem"].functions.submitAnswer(
                 problem_id, answer_hash
             )
-            receipt = contracts.send_tx(self.w3, self.account, tx_func, priority="fast")
+            receipt = contracts.send_tx(self.w3, self.account, tx_func, priority="normal")
 
             if receipt["status"] == 1:
                 return {"success": True, "tx_hash": receipt["transactionHash"].hex()}

@@ -246,9 +246,9 @@ def send_tx(w3: Web3, account, tx_func, priority: str = "normal", **kwargs):
     # EIP-1559 gas 参数
     try:
         base_fee = w3.eth.get_block("latest")["baseFeePerGas"]
-        priority_map = {"normal": 100_000_000, "fast": 500_000_000, "urgent": 1_500_000_000}
-        max_priority = priority_map.get(priority, 100_000_000)
-        max_fee = base_fee * 2 + max_priority
+        priority_map = {"normal": 1_000_000, "fast": 10_000_000, "urgent": 100_000_000}
+        max_priority = priority_map.get(priority, 1_000_000)
+        max_fee = int(base_fee * 1.2) + max_priority
 
         tx = tx_func.build_transaction({
             "from": account.address,
