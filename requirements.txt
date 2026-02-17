@@ -62,7 +62,7 @@ typing-extensions==4.12.2
 # Utilities
 pyrsistent==0.20.0
 attrs==25.3.0
-websockets==15.0.1
+websockets==13.1  # FIX: Downgrade ke versi 13.1 biar kompatibel dengan web3
 
 # Telegram Bot
 python-telegram-bot==20.7
