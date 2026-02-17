@@ -142,6 +142,11 @@ class BatchMineDashboard:
         with self._lock:
             self.total_rewards += amount
 
+    def set_rewards(self, total: float):
+        """直接设置累计收益（从矿工链上数据汇总）"""
+        with self._lock:
+            self.total_rewards = total
+
     def set_active(self, n: int):
         with self._lock:
             self.active = n
@@ -415,21 +420,34 @@ def batch_mine(start: int, count: int | None, workers: int):
     dash.log("系统", f"加载 {len(accounts)} 个已注册账号")
     dash.log("系统", f"模式: 单轮询 + {workers} 并发答题")
 
-    # 1. 初始化所有矿工
+    # 1. 并发初始化所有矿工（批量查 agent_id，大幅加速启动）
     miners: list[Miner] = []
-    for acc in accounts:
-        miner = _create_miner_for_account_live(w3, acc, dash)
-        if miner:
-            addr = Account.from_key(acc.private_key).address
+    init_t0 = time.time()
+    dash.log("系统", f"并发初始化 {len(accounts)} 个矿工...")
 
-            def _make_log(a):
-                def _log(level, msg):
-                    dash.log(level, f"{a[:8]}... {msg}")
-                return _log
+    init_workers = min(20, len(accounts))
+    with ThreadPoolExecutor(max_workers=init_workers) as pool:
+        futures = {pool.submit(_create_miner_for_account_live, w3, acc, dash): acc for acc in accounts}
+        for future in as_completed(futures):
+            acc = futures[future]
+            try:
+                miner = future.result()
+                if miner:
+                    addr = miner.account.address
 
-            miner.log = _make_log(addr)
-            miners.append(miner)
-            dash.update_account(addr, "就绪")
+                    def _make_log(a):
+                        def _log(level, msg):
+                            dash.log(level, f"{a[:8]}... {msg}")
+                        return _log
+
+                    miner.log = _make_log(addr)
+                    miners.append(miner)
+                    dash.update_account(addr, "就绪")
+            except Exception as e:
+                dash.log("错误", f"{acc.short_str()} 初始化异常: {e}")
+
+    init_elapsed = round(time.time() - init_t0, 1)
+    dash.log("系统", f"初始化完成: {len(miners)}/{len(accounts)} 个矿工就绪 ({init_elapsed}s)")
 
     if not miners:
         console.print("[red]✗ 没有可用的矿工[/red]")
@@ -529,15 +547,17 @@ def batch_mine(start: int, count: int | None, workers: int):
                         else:
                             _sync_miner(m, "等待新题目")
 
-                # 定期检查奖励
+                # 定期检查奖励（汇总所有矿工的链上收益）
                 if cycle_count % 20 == 0:
+                    rewards_sum = 0.0
                     for m in miners:
                         try:
                             m.check_and_claim_rewards()
-                            if m.stats["total_rewards"] > 0:
-                                dash.add_rewards(m.stats["total_rewards"])
+                            rewards_sum += m.stats.get("total_rewards", 0.0)
                         except Exception:
                             pass
+                    if rewards_sum > 0:
+                        dash.set_rewards(rewards_sum)
 
                 # 智能等待，期间持续刷新面板
                 wait = poller.get_smart_interval(all_submitted)
@@ -600,8 +620,18 @@ def _create_miner_for_account_live(w3, acc: RegisteredAccount, dash: BatchMineDa
                 x_handle = lookup_x_handle_by_token(acc.auth_token)
 
             agent_id = _auto_register_onchain(w3, account, x_handle, dash)
+
             if agent_id == 0:
-                return None
+                # 注册失败，再查一次链上（可能之前已注册但本次交易失败）
+                try:
+                    agent_id = c["registry"].functions.getAgentId(account.address).call()
+                except Exception:
+                    pass
+                if agent_id == 0:
+                    dash.log("错误", f"{addr[:10]}... 未注册且注册失败，跳过")
+                    return None
+                else:
+                    dash.log("信息", f"{addr[:10]}... 注册交易失败但链上已有 Agent ID: {agent_id}，继续挖矿")
 
         def log_fn(level, msg):
             dash.log(level, f"{addr[:8]}... {msg}")
