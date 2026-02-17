@@ -2,7 +2,7 @@
 web3==7.9.0
 eth-account==0.13.5
 eth-keys==0.6.1
-eth-keyfile==0.8.1  # FIX: Downgrade dari 0.9.0 ke 0.8.1 biar kompatibel
+eth-keyfile==0.8.1
 eth-utils==5.2.0
 eth-typing==5.2.1
 eth-hash==0.7.1
@@ -19,15 +19,15 @@ jiter==0.9.0
 distro==1.9.0
 protobuf==6.30.1
 
-# HTTP & Networking
-requests==2.32.3
-httpx==0.28.1
+# HTTP & Networking - FIX VERSIONS!
+httpx==0.25.2  # FIX: Downgrade ke 0.25.2 biar kompatibel
 httpcore==1.0.7
 h11==0.14.0
 sniffio==1.3.1
 certifi==2025.1.31
 charset-normalizer==3.4.1
 idna==3.10
+requests==2.32.3
 
 # Anti-Detection & Proxies
 curl-cffi==0.7.4
@@ -62,14 +62,23 @@ typing-extensions==4.12.2
 # Utilities
 pyrsistent==0.20.0
 attrs==25.3.0
-websockets==13.1  # FIX: Udah kompatibel
+websockets==13.1
 
-# Telegram Bot
+# Telegram Bot - FIX VERSION!
 python-telegram-bot==20.7
 
-# Dependencies tambahan dari proses install
+# Dependencies tambahan
 pyunormalize>=15.0.0
 types-requests>=2.0.0
 aiohttp>=3.7.4.post0
 eth-abi>=5.0.1
 ckzg>=2.0.0
+bitarray>=2.4.0
+pycryptodome>=3.6.6
+cytoolz>=0.10.1
+regex>=2022.3.15
+anyio>=3.5.0
+urllib3>=1.21.1
+pygments>=2.13.0
+markdown-it-py>=2.2.0
+blinker>=1.9
