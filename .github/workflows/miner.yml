@@ -1,0 +1,59 @@
+name: AgentCoin Auto Miner
+
+on:
+  schedule:
+    # Jalan setiap 6 jam
+    - cron: '0 */6 * * *'
+  workflow_dispatch:  # Bisa dijalankan manual
+
+jobs:
+  mine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install web3 requests python-dotenv rich anthropic
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
+      - name: Create .env file
+        run: |
+          echo "X_HANDLE=${{ secrets.X_HANDLE }}" >> .env
+          echo "X_AUTH_TOKEN=${{ secrets.X_AUTH_TOKEN }}" >> .env
+          echo "ANTHROPIC_AUTH_TOKEN=${{ secrets.ANTHROPIC_KEY }}" >> .env
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+          echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> .env
+          # Wallet opsional - bisa dikosongin dulu
+          if [ -n "${{ secrets.WALLET_PRIVATE_KEY }}" ]; then
+            echo "WALLET_PRIVATE_KEY=${{ secrets.WALLET_PRIVATE_KEY }}" >> .env
+          fi
+
+      - name: Run mining cycle
+        run: python -c "
+from miner import AgentMiner
+from config import Config
+from wallet import Wallet
+import os
+
+config = Config()
+wallet = Wallet(config.private_key)
+miner = AgentMiner(config, wallet)
+result = miner.mine_one_cycle()
+
+# Kirim notifikasi ke Telegram
+if result and result.get('submitted'):
+    msg = f'✅ Mined! Problem: {result[\"problem\"][:50]}... Answer: {result[\"answer\"]}'
+else:
+    msg = '⏳ No submission this cycle'
+
+os.system(f'curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} -d text=\"$msg\"')
+          "
