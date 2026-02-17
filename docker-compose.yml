@@ -1,0 +1,53 @@
+services:
+  # Web 可视化面板（常驻）
+  agc-web:
+    build: .
+    command: python -u web_dashboard.py
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  # 单账号注册
+  agc-register:
+    build: .
+    command: python -u register.py
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    tty: true
+    stdin_open: true
+
+  # 批量注册（带终端面板）
+  agc-batch-register:
+    build: .
+    command: python -u register.py --batch --workers 3
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    tty: true
+    stdin_open: true
+
+  # 单账号挖矿（带终端面板）
+  agc-miner:
+    build: .
+    command: python -u mine.py
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+
+  # 批量挖矿（带终端面板）
+  agc-batch-miner:
+    build: .
+    command: python -u mine.py --batch --workers 5
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    tty: true
+    stdin_open: true

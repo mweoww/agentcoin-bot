@@ -1,0 +1,26 @@
+# 敏感数据
+.env
+
+# 用户数据
+data/accounts.txt
+data/registered.txt
+data/.state.json
+data/batch_state.json
+data/mine_status.json
+data/mine_stats.json
+data/register_log.jsonl
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
